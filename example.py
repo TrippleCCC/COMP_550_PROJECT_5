@@ -8,7 +8,7 @@ enviornment = [
 robot_position = (0, 0)
 goal = (2, 3)
 
-def solve():
+def solve(maxStages = 3):
     k = 0
 
     # Define states 
@@ -44,15 +44,23 @@ def solve():
 
     # Add GoalState Constraint
     # s.add(OnGoal)
+    
+    # TODO: exclusion axioms
 
-    while True:
+    while k < maxStages:
+        # TODO: Define Frame encodings
+
+
         # Add operator encoding for Up
+        # TODO: create other operator encodings
         s.add(Or(Not(Up), And(Not(TouchingTop), Not(BlockedTop), BlockedBottomk1, BlockedLeftk1, BlockedRightk1, TouchingTopk1, TouchingLeftk1, TouchingRightk1, OnGoalk1)))
 
         # Add more constrains
+        # TODO: create functions for current states
         s.add(TouchingTop == True)
         s.add(BlockedTop == False)
 
+        # TODO: create functions for computing k+1 states
         s.add(BlockedBottomk1 == False)
         s.add(BlockedLeftk1 == False)
         s.add(BlockedRightk1 == False)
@@ -61,9 +69,20 @@ def solve():
         s.add(TouchingRightk1 == False)
         s.add(OnGoalk1 == False)
 
+
         print(s.check())
         print(type(s.model()))
-        print(s.model().evaluate(Up))
+        results = {
+                Up: s.model().evaluate(Up),
+                Down: s.model().evaluate(Down),
+                Right: s.model().evaluate(Right),
+                Left: s.model().evaluate(Left)}
+        print(results)
+
+        # Choose one result
+
+        # TODO: compute the next robot position
+        robot_position = Somthing
         break
         
 
