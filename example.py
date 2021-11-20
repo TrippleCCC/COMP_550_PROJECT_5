@@ -67,8 +67,14 @@ def solve(maxStages = 3):
 
 
     while k < maxStages:
-        # TODO: Define Frame encodings
-
+        # TODO: Define Frame encodings (frame axioms)
+        s.add( Or( Up, Not(TouchingTop), TouchingTopk1 ) )
+        s.add( Or( Up, Not(BlockedTop), BlockedTopk1 ) ) 
+        s.add( Or( Left, Not(TouchingLeft), TouchingLeftk1, Not(BlockedLeft), BlockedLeftk1 ) )
+        s.add( Or( Left, Not(BlockedLeft), BlockedLeftk1 ) ) 
+        s.add( Or( Down, Not(TouchingBottom), TouchingBottomk1 ) )
+        s.add( Or (Down,  Not(BlockedBottom), BlockedBottomk1) )
+        s.add( Or( Right, Not(TouchingRight), TouchingRightk1, Not(BlockedRight), BlockedRightk1 ) )
 
         # Add operator encoding for Up
         # TODO: create other operator encodings
