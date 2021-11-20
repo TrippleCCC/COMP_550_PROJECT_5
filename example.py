@@ -1,12 +1,24 @@
 from z3 import *
 
-enviornment = [
+environment = [
         [0, 0, 0, 0], 
         [0, 0, 0, 0], 
-        [0, 0, 0, 0],]
+        [0, 0, 0, 0]]
 
 robot_position = (0, 0)
 goal = (2, 3)
+
+def touchTop():
+        return robot_position[1] == 0
+
+def touchBottom():
+        return robot_position[1] == len(environment) - 1
+
+def touchLeft():
+        return robot_position[0] == 0
+
+def touchRight():
+        return robot_position[0] == len(environment[0]) - 1
 
 def solve(maxStages = 3):
     k = 0
@@ -44,8 +56,15 @@ def solve(maxStages = 3):
 
     # Add GoalState Constraint
     # s.add(OnGoal)
-    
+        
     # TODO: exclusion axioms
+    s.add( Or( Not(Up), Not(Down) ))
+    s.add( Or( Not(Up), Not(Right) ))
+    s.add( Or( Not(Up), Not(Left) ))
+    s.add( Or( Not(Right), Not(Down) ))
+    s.add( Or( Not(Right), Not(Left) ))
+    s.add( Or( Not(Down), Not(Left) ))
+
 
     while k < maxStages:
         # TODO: Define Frame encodings
@@ -82,8 +101,11 @@ def solve(maxStages = 3):
         # Choose one result
 
         # TODO: compute the next robot position
-        robot_position = Somthing
-        break
-        
+        # robot_position = Somthing
+        # break
 
-solve()
+# solve()
+
+
+
+
