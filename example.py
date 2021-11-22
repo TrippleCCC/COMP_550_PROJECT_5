@@ -55,7 +55,7 @@ def blockedRight(position):
 def nextPositon(current, result):
         has_obstacle = False
         global newPos
-        if result.get("Up") == Bool('Up'):
+        if result.get("Up").Bool("Up"):
                 print("Action: Up")
                 for o in obstacles:
                         if o[1] < current[1] and o[0] == current[0]:
@@ -64,7 +64,7 @@ def nextPositon(current, result):
                 if not has_obstacle:
                         newPos = (current[0], 0)
 
-        elif result.get("Down") == Bool('Down'):
+        elif result.get("Down").bool("Down"):
                 print("Action: Down")
                 for o in obstacles:
                         if o[1] > current[1] and o[0] == current[0]:
@@ -73,7 +73,8 @@ def nextPositon(current, result):
                 if has_obstacle == False:
                         newPos = (current[0], len(environment) - 1)
 
-        elif result.get("Right") == Bool('Right'):
+        elif result.get("Right"):
+                print("Action: Right")
                 for o in obstacles:
                         if o[0] > current[0] and o[1] == current[1]:
                                 newPos = (o[0] - 1, current[1])
@@ -82,7 +83,8 @@ def nextPositon(current, result):
                         newPos = (len(environment[0]) - 1, current[1])
                         print(newPos)
         
-        elif result.get("Left") == Bool('left'):
+        elif result.get("Left"):
+                print("Action: Left")
                 for o in obstacles:
                         if o[0] < current[0]  and o[1] == current[1]:
                                 newPos = (o[0] + 1, current[1])
@@ -119,105 +121,136 @@ def solve(maxStages = 3):
     OnGoal = Bool('OnGoal')
     OnGoalk1 = Bool('OnGoalk1')
 
-    InitialState = And(BlockedTop, BlockedLeft, Not(BlockedRight), Not(BlockedBottom), Not(OnGoal))
-    
     # Actions
     Up = Bool('Up')
     Right = Bool('Right')
     Down = Bool('Down')
     Left = Bool('Left')
 
-    s = Solver()
+    # s = Solver()
+
+    # InitialState = And(BlockedBottom, BlockedLeft, Not(BlockedRight), Not(BlockedTop), Not(OnGoal))
+    # GoalState = And(BlockedTop, BlockedRight, Not(BlockedLeft), Not(BlockedBottom), OnGoal)
 
 #     s.add( And(TouchingTop, TouchingLeft) )
 
 #     s.add( And( TouchingBottom, TouchingRight, onGoal)) 
 
     # Add InitialState Constraint
-#     s.add(Not(OnGoal))
+    # s.add(InitialState)
 
     # Add GoalState Constraint
-#     s.add(OnGoal)
+    # s.add(GoalState)
         
-    # TODO: exclusion axioms
-    s.add( Or( Not(Up), Not(Down) ))
-    s.add( Or( Not(Up), Not(Right) ))
-    s.add( Or( Not(Up), Not(Left) ))
-    s.add( Or( Not(Right), Not(Down) ))
-    s.add( Or( Not(Right), Not(Left) ))
-    s.add( Or( Not(Down), Not(Left) ))
+    # exclusion axioms
+    # s.add( Or( Not(Up), Not(Down) ))
+    # s.add( Or( Not(Up), Not(Right) ))
+    # s.add( Or( Not(Up), Not(Left) ))
+    # s.add( Or( Not(Right), Not(Down) ))
+    # s.add( Or( Not(Right), Not(Left) ))
+    # s.add( Or( Not(Down), Not(Left) ))
 
+    s = Solver()
 
     while k < maxStages:
-        # TODO: Define Frame encodings (frame axioms)
-        s.add( Or( Up, Not(TouchingTop), TouchingTopk1 ) )
-        s.add( Or( Up, Not(BlockedTop), BlockedTopk1 ) ) 
-        s.add( Or( Left, Not(TouchingLeft), TouchingLeftk1, Not(BlockedLeft), BlockedLeftk1 ) )
-        s.add( Or( Left, Not(BlockedLeft), BlockedLeftk1 ) ) 
-        s.add( Or( Down, Not(TouchingBottom), TouchingBottomk1 ) )
-        s.add( Or( Down,  Not(BlockedBottom), BlockedBottomk1) )
-        s.add( Or( Right, Not(TouchingRight), TouchingRightk1) )
-        s.add( Or( Right, Not(BlockedRight), BlockedRightk1 ) )
+        
+        conjunction = True
+        # exclusion axioms,
+        conjunction = And(conjunction, Or( Not(Up), Not(Down) ))
+        conjunction = And(conjunction, Or( Not(Up), Not(Right) ))
+        conjunction = And(conjunction, Or( Not(Up), Not(Left) ))
+        conjunction = And(conjunction, Or( Not(Right), Not(Down) ))
+        conjunction = And(conjunction, Or( Not(Right), Not(Left) ))
+        conjunction = And(conjunction, Or( Not(Down), Not(Left) ))
+        # Define Frame encodings (frame axioms)
+        conjunction = And(conjunction, Or( Up, Not(TouchingTop), TouchingTopk1 ) )
+        conjunction = And(conjunction, Or( Up, Right, Left, Not(BlockedTop), BlockedTopk1 ) ) 
+        conjunction = And(conjunction, Or( Left, Not(TouchingLeft), TouchingLeftk1 ))
+        conjunction = And(conjunction, Or( Left, Up, Down, Not(BlockedLeft), BlockedLeftk1 ) ) 
+        conjunction = And(conjunction, Or( Down, Not(TouchingBottom), TouchingBottomk1 ) )
+        conjunction = And(conjunction, Or( Down, Right, Left, Not(BlockedBottom), BlockedBottomk1) )
+        conjunction = And(conjunction, Or( Right, Not(TouchingRight), TouchingRightk1) )
+        conjunction = And(conjunction, Or( Right, Up, Down, Not(BlockedRight), BlockedRightk1 ) )
 
-        s.add( Or( Up, Not(OnGoal), OnGoalk1 ) )
-        s.add( Or( Down, Not(OnGoal), OnGoalk1 ) )
-        s.add( Or( Right, Not(OnGoal), OnGoalk1 ) )
-        s.add( Or( Left, Not(OnGoal), OnGoalk1 ) )
+        conjunction = And(conjunction, Or( Up, Not(OnGoal), OnGoalk1 ) )
+        conjunction = And(conjunction, Or( Down, Not(OnGoal), OnGoalk1 ) )
+        conjunction = And(conjunction, Or( Right, Not(OnGoal), OnGoalk1 ) )
+        conjunction = And(conjunction, Or( Left, Not(OnGoal), OnGoalk1 ) )
 
         # Add operator encoding for Up
-        s.add(Or(Not(Up), \
+        conjunction = And(conjunction,Or(Not(Up), \
             And(Not(TouchingTop), Not(BlockedTop), BlockedTopk1, BlockedLeftk1, \
                 BlockedRightk1, TouchingTopk1, TouchingLeftk1, TouchingRightk1, OnGoalk1)))
-        s.add(Or(Not(Right), \
+        conjunction = And(conjunction,Or(Not(Right), \
             And(Not(TouchingRight), Not(BlockedRight), BlockedTopk1, BlockedBottomk1, \
                 BlockedRightk1, TouchingTopk1, TouchingBottom, TouchingRightk1, OnGoalk1)))
-        s.add(Or(Not(Down), \
+        conjunction = And(conjunction,Or(Not(Down), \
             And(Not(TouchingBottom), Not(BlockedBottom), BlockedBottomk1, BlockedLeftk1, \
                 BlockedRightk1, TouchingBottomk1, TouchingRightk1, TouchingLeft, OnGoalk1)))
-        s.add(Or(Not(Left), \
+        conjunction = And(conjunction,Or(Not(Left), \
             And(Not(TouchingLeft), Not(BlockedLeft), BlockedBottomk1, BlockedLeftk1, \
                 BlockedTopk1, TouchingLeftk1, TouchingTopk1, TouchingBottomk1, OnGoalk1)))
 
         # Add more constrains
         # TODO: create functions for current states
-        s.add(TouchingTop == touchTop(robot_position))
-        s.add(BlockedTop == blockedTop(robot_position))
-        s.add(TouchingBottom == touchBottom(robot_position))
-        s.add(BlockedBottom == blockedBottom(robot_position))
-        s.add(TouchingRight == touchRight(robot_position))
-        s.add(BlockedRight == blockedRight(robot_position))
-        s.add(TouchingLeft == touchLeft(robot_position))
-        s.add(BlockedLeft == blockedLeft(robot_position))
-        s.add(OnGoal == (robot_position==goal))
+        # s.add(TouchingTop == touchTop(robot_position))
+        # s.add(BlockedTop == blockedTop(robot_position))
+        # s.add(TouchingBottom == touchBottom(robot_position))
+        # s.add(BlockedBottom == blockedBottom(robot_position))
+        # s.add(TouchingRight == touchRight(robot_position))
+        # s.add(BlockedRight == blockedRight(robot_position))
+        # s.add(TouchingLeft == touchLeft(robot_position))
+        # s.add(BlockedLeft == blockedLeft(robot_position))
+        # s.add(OnGoal == (robot_position==goal))
+        conjunction = And(conjunction,TouchingTop, touchTop(robot_position))
+        conjunction = And(conjunction,BlockedTop == blockedTop(robot_position))
+        conjunction = And(conjunction,TouchingBottom == touchBottom(robot_position))
+        conjunction = And(conjunction,BlockedBottom == blockedBottom(robot_position))
+        conjunction = And(conjunction,TouchingRight == touchRight(robot_position))
+        conjunction = And(conjunction,BlockedRight == blockedRight(robot_position))
+        conjunction = And(conjunction,TouchingLeft == touchLeft(robot_position))
+        conjunction = And(conjunction,BlockedLeft == blockedLeft(robot_position))
+        conjunction = And(conjunction,OnGoal == (robot_position==goal))
+
+        s.add(Not(conjunction))
+        # s.add(Not(And(Up == False, Right == False, Left == False, Down == False)))
 
 
 
         print(s.check())
 
-        if s.check() == sat:
-                results = {
-                        "Up": s.model().evaluate(Up),
-                        "Down": s.model().evaluate(Down),
-                        "Right": s.model().evaluate(Right),
-                        "Left": s.model().evaluate(Left),
-                        "TouchingTop": s.model().evaluate(TouchingTop)}
-                print(results)
-                print (nextPositon(robot_position, results))
-                
-
-        else:
-                print(s.unsat_core())
-
         
         # TODO: create functions for computing k+1 states
-        robot_position_k1 = nextPositon(robot_position, results)
-        s.add(BlockedBottomk1 == blockedBottom(robot_position_k1))
-        s.add(BlockedLeftk1 == blockedLeft(robot_position_k1))
-        s.add(BlockedRightk1 == blockedRight(robot_position_k1))
-        s.add(TouchingTopk1 == touchTop(robot_position_k1))
-        s.add(TouchingLeftk1 == touchLeft(robot_position_k1))
-        s.add(TouchingRightk1 == touchRight(robot_position_k1))
-        s.add(OnGoalk1 == (robot_position_k1==goal))
+
+        # results = {}
+        # robot_position_k1 = nextPositon(robot_position, results)
+        # s.add(BlockedBottomk1 == blockedBottom(robot_position_k1))
+        # s.add(BlockedLeftk1 == blockedLeft(robot_position_k1))
+        # s.add(BlockedRightk1 == blockedRight(robot_position_k1))
+        # s.add(TouchingTopk1 == touchTop(robot_position_k1))
+        # s.add(TouchingLeftk1 == touchLeft(robot_position_k1))
+        # s.add(TouchingRightk1 == touchRight(robot_position_k1))
+        # s.add(OnGoalk1 == (robot_position_k1==goal))
+
+        print(s.check())
+
+        # if s.check() == "sat":
+        results = {
+                "Up": s.model().evaluate(Up),
+                "Down": s.model().evaluate(Down),
+                "Right": s.model().evaluate(Right),
+                "Left": s.model().evaluate(Left),
+                "TouchingTop": s.model().evaluate(TouchingTop),
+                "TouchingBottom": s.model().evaluate(TouchingBottom)}
+        print(results, touchTop(robot_position), touchBottom(robot_position))
+        # print(results.get("Up"))
+        # print (nextPositon(robot_position, results))
+                
+
+        # else:
+        # print(s.unsat_core())
+
+        k += 1
 
         # Choose one result
         # results["Right"] = True
