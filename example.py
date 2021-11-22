@@ -1,4 +1,4 @@
-from z3 import *
+from z3 import Bool, Solver, Or, And, Not
 
 enviornment = [
         [0, 0, 0, 0], 
