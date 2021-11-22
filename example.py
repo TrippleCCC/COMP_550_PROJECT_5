@@ -8,17 +8,79 @@ environment = [
 robot_position = (0, 0)
 goal = (2, 3)
 
-def touchTop():
-        return robot_position[1] == 0
+obstacles = [(1,1), (1,2)]
 
-def touchBottom():
-        return robot_position[1] == len(environment) - 1
+def touchTop(position):
+        return position[1] == 0
 
-def touchLeft():
-        return robot_position[0] == 0
+def touchBottom(position):
+        return position[1] == len(environment) - 1
 
-def touchRight():
-        return robot_position[0] == len(environment[0]) - 1
+def touchLeft(position):
+        return position[0] == 0
+
+def touchRight(position):
+        return position[0] == len(environment[0]) - 1
+
+def blockedTop(position):
+        for o in obstacles:
+                if position[1] == o[1] + 1:
+                        return True
+        return False
+
+def blockedBottom(position):
+        for o in obstacles:
+                if position[1] == o[1] - 1:
+                        return True
+        return False
+
+def blockedLeft(position):
+        for o in obstacles:
+                if position[0] == o[0] + 1:
+                        return True
+        return False
+
+def blockedRight(position):
+        for o in obstacles:
+                if position[0] == o[0] - 1:
+                        return True
+        return False
+
+# def robotPositon(current, result):
+#         has_obstacle = False
+#         if result.get(Up):
+#                 for o in obstacles:
+#                         if o[1] < current[1]:
+#                                 current[1] = o[1] + 1
+#                                 has_obstacle = True
+#                 if not has_obstacle:
+#                         current[1] = 0
+
+#         elif result.get(Down):
+#                 for o in obstacles:
+#                         if o[1] > current[1]:
+#                                 current[1] = o[1] - 1
+#                                 has_obstacle = True
+#                 if not has_obstacle:
+#                         current[1] = len(environment) - 1
+
+#         elif result.get(Right):
+#                 for o in obstacles:
+#                         if o[0] > current[0]:
+#                                 current[0] = o[0] - 1
+#                                 has_obstacle = True
+#                 if not has_obstacle:
+#                         current[0] = len(environment[0]) - 1
+        
+#         elif result.get(Left):
+#                 for o in obstacles:
+#                         if o[0] < current[0]:
+#                                 current[0] = o[0] + 1
+#                                 has_obstacle = True
+#                 if not has_obstacle:
+#                         current[0] = 0
+
+#         return current
 
 def solve(maxStages = 3):
     k = 0
@@ -42,6 +104,8 @@ def solve(maxStages = 3):
     TouchingBottomk1 = Bool('TouchingBottomk1')
     OnGoal = Bool('OnGoal')
     OnGoalk1 = Bool('OnGoalk1')
+
+    InitialState = And(BlockedTop, BlockedLeft, Not(BlockedRight), Not(BlockedBottom), Not(OnGoal))
     
     # Actions
     Up = Bool('Up')
@@ -73,8 +137,14 @@ def solve(maxStages = 3):
         s.add( Or( Left, Not(TouchingLeft), TouchingLeftk1, Not(BlockedLeft), BlockedLeftk1 ) )
         s.add( Or( Left, Not(BlockedLeft), BlockedLeftk1 ) ) 
         s.add( Or( Down, Not(TouchingBottom), TouchingBottomk1 ) )
-        s.add( Or (Down,  Not(BlockedBottom), BlockedBottomk1) )
-        s.add( Or( Right, Not(TouchingRight), TouchingRightk1, Not(BlockedRight), BlockedRightk1 ) )
+        s.add( Or( Down,  Not(BlockedBottom), BlockedBottomk1) )
+        s.add( Or( Right, Not(TouchingRight), TouchingRightk1) )
+        s.add( Or( Right, Not(BlockedRight), BlockedRightk1 ) )
+
+        s.add( Or( Up, Not(OnGoal), OnGoalk1 ) )
+        s.add( Or( Down, Not(OnGoal), OnGoalk1 ) )
+        s.add( Or( Right, Not(OnGoal), OnGoalk1 ) )
+        s.add( Or( Left, Not(OnGoal), OnGoalk1 ) )
 
         # Add operator encoding for Up
         # TODO: create other operator encodings
@@ -82,8 +152,16 @@ def solve(maxStages = 3):
 
         # Add more constrains
         # TODO: create functions for current states
-        s.add(TouchingTop == True)
-        s.add(BlockedTop == False)
+        s.add(TouchingTop == touchTop(robot_position))
+        s.add(BlockedTop == blockedTop(robot_position))
+        s.add(TouchingBottom == touchBottom(robot_position))
+        s.add(BlockedBottom == blockedBottom(robot_position))
+        s.add(TouchingRight == touchRight(robot_position))
+        # s.add(BlockedRight == blockedRight(robot_position))
+        s.add(TouchingLeft == touchLeft(robot_position))
+        s.add(BlockedLeft == blockedLeft(robot_position))
+        s.add(OnGoal == (robot_position==goal))
+
 
         # TODO: create functions for computing k+1 states
         s.add(BlockedBottomk1 == False)
@@ -94,15 +172,16 @@ def solve(maxStages = 3):
         s.add(TouchingRightk1 == False)
         s.add(OnGoalk1 == False)
 
-
         print(s.check())
-        print(type(s.model()))
-        results = {
-                Up: s.model().evaluate(Up),
-                Down: s.model().evaluate(Down),
-                Right: s.model().evaluate(Right),
-                Left: s.model().evaluate(Left)}
-        print(results)
+        if s.check:
+                results = {
+                        Up: s.model().evaluate(Up),
+                        Down: s.model().evaluate(Down),
+                        Right: s.model().evaluate(Right),
+                        Left: s.model().evaluate(Left)}
+                print(results)
+                print(results.get(Up))
+                # print (robotPositon(robot_position, results))
 
         # Choose one result
 
@@ -110,7 +189,7 @@ def solve(maxStages = 3):
         # robot_position = Somthing
         # break
 
-# solve()
+solve()
 
 
 
