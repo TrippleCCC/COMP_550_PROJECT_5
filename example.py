@@ -95,7 +95,7 @@ def nextPositon(current, result):
         print(newPos)
         return newPos
 
-def solve(maxStages = 3):
+def solve(maxStages = 5):
     
     global robot_position
 
@@ -218,7 +218,6 @@ def solve(maxStages = 3):
         # s.add(Not(And(Up == False, Right == False, Left == False, Down == False)))
 
 
-
         print(s.check())
         
         # TODO: create functions for computing k+1 states
@@ -243,8 +242,10 @@ def solve(maxStages = 3):
                 "Left": s.model().evaluate(Left),
                 "TouchingTop": s.model().evaluate(TouchingTop),
                 "TouchingBottom": s.model().evaluate(TouchingBottom),
-                "TouchingLeft": s.model().evaluate(TouchingLeft),
-                "TouchingRight": s.model().evaluate(TouchingRight)}
+                # "TouchingLeft": s.model().evaluate(TouchingLeft),
+                # "TouchingRight": s.model().evaluate(TouchingRight),
+                "BlockedTop": s.model().evaluate(BlockedTop),
+                "TouchingTopk1": s.model().evaluate(TouchingTopk1),}
         print(results, touchTop(robot_position), touchBottom(robot_position))
         # print(results.get("Up"))
         # print (nextPositon(robot_position, results))
