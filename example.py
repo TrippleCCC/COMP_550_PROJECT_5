@@ -55,7 +55,7 @@ def blockedRight(position):
 def nextPositon(current, result):
         has_obstacle = False
         global newPos
-        if result.get("Up").Bool("Up"):
+        if result.get("Up") == Bool("Up"):
                 print("Action: Up")
                 for o in obstacles:
                         if o[1] < current[1] and o[0] == current[0]:
@@ -64,7 +64,7 @@ def nextPositon(current, result):
                 if not has_obstacle:
                         newPos = (current[0], 0)
 
-        elif result.get("Down").bool("Down"):
+        elif result.get("Down") == bool("Down"):
                 print("Action: Down")
                 for o in obstacles:
                         if o[1] > current[1] and o[0] == current[0]:
@@ -73,7 +73,7 @@ def nextPositon(current, result):
                 if has_obstacle == False:
                         newPos = (current[0], len(environment) - 1)
 
-        elif result.get("Right"):
+        elif result.get("Right") == bool("Right") :
                 print("Action: Right")
                 for o in obstacles:
                         if o[0] > current[0] and o[1] == current[1]:
@@ -83,7 +83,7 @@ def nextPositon(current, result):
                         newPos = (len(environment[0]) - 1, current[1])
                         print(newPos)
         
-        elif result.get("Left"):
+        elif result.get("Left") ==  bool("Left"):
                 print("Action: Left")
                 for o in obstacles:
                         if o[0] < current[0]  and o[1] == current[1]:
@@ -202,7 +202,9 @@ def solve(maxStages = 3):
         # s.add(TouchingLeft == touchLeft(robot_position))
         # s.add(BlockedLeft == blockedLeft(robot_position))
         # s.add(OnGoal == (robot_position==goal))
-        conjunction = And(conjunction,TouchingTop, touchTop(robot_position))
+        # print("Conjuection: " + str(conjunction))
+        conjunction = And(conjunction,TouchingTop == touchTop(robot_position))
+        print("Touching Top: " + str(touchTop(robot_position)))
         conjunction = And(conjunction,BlockedTop == blockedTop(robot_position))
         conjunction = And(conjunction,TouchingBottom == touchBottom(robot_position))
         conjunction = And(conjunction,BlockedBottom == blockedBottom(robot_position))
@@ -218,7 +220,6 @@ def solve(maxStages = 3):
 
 
         print(s.check())
-
         
         # TODO: create functions for computing k+1 states
 
@@ -241,7 +242,9 @@ def solve(maxStages = 3):
                 "Right": s.model().evaluate(Right),
                 "Left": s.model().evaluate(Left),
                 "TouchingTop": s.model().evaluate(TouchingTop),
-                "TouchingBottom": s.model().evaluate(TouchingBottom)}
+                "TouchingBottom": s.model().evaluate(TouchingBottom),
+                "TouchingLeft": s.model().evaluate(TouchingLeft),
+                "TouchingRight": s.model().evaluate(TouchingRight)}
         print(results, touchTop(robot_position), touchBottom(robot_position))
         # print(results.get("Up"))
         # print (nextPositon(robot_position, results))
