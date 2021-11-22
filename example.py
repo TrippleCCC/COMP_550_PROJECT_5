@@ -1,4 +1,4 @@
-from z3 import *
+from z3 import Bool, Solver, Or, And, Not
 
 environment = [
         [0, 0, 0, 0], 
@@ -159,8 +159,18 @@ def solve(maxStages = 3):
         s.add( Or( Left, Not(OnGoal), OnGoalk1 ) )
 
         # Add operator encoding for Up
-        # TODO: create other operator encodings
-        s.add(Or(Not(Up), And(Not(TouchingTop), Not(BlockedTop), BlockedBottomk1, BlockedLeftk1, BlockedRightk1, TouchingTopk1, TouchingLeftk1, TouchingRightk1, OnGoalk1)))
+        s.add(Or(Not(Up), \
+            And(Not(TouchingTop), Not(BlockedTop), BlockedTopk1, BlockedLeftk1, \
+                BlockedRightk1, TouchingTopk1, TouchingLeftk1, TouchingRightk1, OnGoalk1)))
+        s.add(Or(Not(Right), \
+            And(Not(TouchingRight), Not(BlockedRight), BlockedTopk1, BlockedBottomk1, \
+                BlockedRightk1, TouchingTopk1, TouchingBottom, TouchingRightk1, OnGoalk1)))
+        s.add(Or(Not(Down), \
+            And(Not(TouchingBottom), Not(BlockedBottom), BlockedBottomk1, BlockedLeftk1, \
+                BlockedRightk1, TouchingBottomk1, TouchingRightk1, TouchingLeft, OnGoalk1)))
+        s.add(Or(Not(Left), \
+            And(Not(TouchingLeft), Not(BlockedLeft), BlockedBottomk1, BlockedLeftk1, \
+                BlockedTopk1, TouchingLeftk1, TouchingTopk1, TouchingBottomk1, OnGoalk1)))
 
         # Add more constrains
         # TODO: create functions for current states
