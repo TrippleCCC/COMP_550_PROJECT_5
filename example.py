@@ -48,6 +48,7 @@ def blockedRight(position):
 
 def nextPositon(current, result):
         has_obstacle = False
+        newPos = (0, 0)
         if result.get("Up"):
                 print("Action: Up")
                 for o in obstacles:
@@ -186,6 +187,7 @@ def solve(maxStages = 3):
 
 
         # TODO: create functions for computing k+1 states
+        results = {}
         robot_position_k1 = nextPositon(robot_position, results)
         s.add(BlockedBottomk1 == blockedBottom(robot_position_k1))
         s.add(BlockedLeftk1 == blockedLeft(robot_position_k1))
@@ -197,24 +199,24 @@ def solve(maxStages = 3):
 
         print(s.check())
 
-        if s.check() == sat:
-                results = {
-                        "Up": s.model().evaluate(Up),
-                        "Down": s.model().evaluate(Down),
-                        "Right": s.model().evaluate(Right),
-                        "Left": s.model().evaluate(Left)}
-                print(results)
-                print(results.get("Up"))
-                print (nextPositon(robot_position, results))
-                robot_position = nextPositon(robot_position, results)
+        # if s.check() == "sat":
+        results = {
+                "Up": s.model().evaluate(Up),
+                "Down": s.model().evaluate(Down),
+                "Right": s.model().evaluate(Right),
+                "Left": s.model().evaluate(Left)}
+        print(results)
+        print(results.get("Up"))
+        print (nextPositon(robot_position, results))
+                
 
-        else:
-                print(s.unsat_core())
+        # else:
+        print(s.unsat_core())
 
         # Choose one result
 
         # TODO: compute the next robot position
-        # robot_position = Somthing
+        robot_position = nextPositon(robot_position, results)
         # break
 
 solve()
