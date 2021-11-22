@@ -1,5 +1,5 @@
 
-from z3 import Bool, Solver, Or, And, Not, sat
+from z3 import Bool, Solver, Or, And, Not, sat, Implies
 # import yaml
 import argparse
 
@@ -8,94 +8,101 @@ environment = [
         [0, 0, 0, 0], 
         [0, 0, 0, 0]]
 
+# environment = [
+#         [0, 0, 0, 0], 
+#         [0, 0, 0, 0], 
+#         [0, 0, 0, 0],
+#         [0, 0, 0, 0]]
+
+# environment = [
+#         [0, 0, 0, 0, 0, 0, 0, 0], 
+#         [0, 0, 0, 0, 0, 0, 0, 0], 
+#         [0, 0, 0, 0, 0, 0, 0, 0],
+#         [0, 0, 0, 0, 0, 0, 0, 0]]
+
+# robot_position = (3, 0)
 robot_position = (0, 0)
-goal = (2, 3)
+goal = (2, 0)
+# goal = (1, 7)
+# goal = (3, 1)
 
-obstacles = [(0,2), (1,2)]
 
-results = {}
-newPos = (0, 0)
+obstacles = [(1, 0), (1, 1), (1, 2)]
+# obstacles = [(1,1), (1,2), (1, 0)]
+# obstacles = [(3, 0), (1, 0), (1, 1), (2, 2),  (0, 3)]
+# obstacles = [(3, 1), (0, 2), (3, 4), (2, 6)]
+
+pos_action = {}
 
 def touchTop(position):
-        return position[1] == 0
-
-def touchBottom(position):
-        return position[1] == len(environment) - 1
-
-def touchLeft(position):
         return position[0] == 0
 
+def touchBottom(position):
+        return position[0] == len(environment) - 1
+
+def touchLeft(position):
+        return position[1] == 0
+
 def touchRight(position):
-        return position[0] == len(environment[0]) - 1
+        return position[1] == len(environment[0]) - 1
 
 def blockedTop(position):
         for o in obstacles:
-                if position[1] == o[1] + 1:
+                if position[0] == o[0] + 1 and position[1] == o[1]:
                         return True
         return False
 
 def blockedBottom(position):
         for o in obstacles:
-                if position[1] == o[1] - 1:
+                if position[0] == o[0] - 1 and position[1] == o[1]:
                         return True
         return False
 
 def blockedLeft(position):
         for o in obstacles:
-                if position[0] == o[0] + 1:
+                if position[1] == o[1] + 1 and position[0] == o[0]:
                         return True
         return False
 
 def blockedRight(position):
         for o in obstacles:
-                if position[0] == o[0] - 1:
+                if position[1] == o[1] - 1 and position[0] == o[0]:
                         return True
         return False
 
 def nextPositon(current, result):
-        has_obstacle = False
-        global newPos
-        if result.get("Up") == Bool("Up"):
+        newPos = current
+        if result.get("Up"):
                 print("Action: Up")
-                for o in obstacles:
-                        if o[1] < current[1] and o[0] == current[0]:
-                                newPos = (current[0], o[1] + 1)
-                                has_obstacle = True
-                if not has_obstacle:
-                        newPos = (current[0], 0)
+                while True:
+                    if blockedTop(newPos) or touchTop(newPos):
+                        return newPos, "Up"
+                    newPos = (newPos[0] - 1, newPos[1])
 
-        elif result.get("Down") == bool("Down"):
+        elif result.get("Down"):
                 print("Action: Down")
-                for o in obstacles:
-                        if o[1] > current[1] and o[0] == current[0]:
-                                newPos = (current[0], o[1] - 1)
-                                has_obstacle = True
-                if has_obstacle == False:
-                        newPos = (current[0], len(environment) - 1)
+                while True:
+                    if blockedBottom(newPos) or touchBottom(newPos):
+                        return newPos, "Down"
+                    newPos = (newPos[0] + 1, newPos[1])
 
-        elif result.get("Right") == bool("Right") :
+        elif result.get("Right"):
                 print("Action: Right")
-                for o in obstacles:
-                        if o[0] > current[0] and o[1] == current[1]:
-                                newPos = (o[0] - 1, current[1])
-                                has_obstacle = True
-                if has_obstacle == False:
-                        newPos = (len(environment[0]) - 1, current[1])
-                        print(newPos)
-        
-        elif result.get("Left") ==  bool("Left"):
+                while True:
+                    if blockedRight(newPos) or touchRight(newPos):
+                        return newPos, "Right"
+                    newPos = (newPos[0], newPos[1] + 1)
+
+        elif result.get("Left"):
                 print("Action: Left")
-                for o in obstacles:
-                        if o[0] < current[0]  and o[1] == current[1]:
-                                newPos = (o[0] + 1, current[1])
-                                has_obstacle = True
-                if not has_obstacle:
-                        newPos = (0, current[1])
+                while True:
+                    if blockedLeft(newPos) or touchLeft(newPos):
+                        return newPos, "Left"
+                    newPos = (newPos[0], newPos[1] - 1)
 
-        print(newPos)
-        return newPos
+        return newPos, None
 
-def solve(maxStages = 5):
+def solve(maxStages = 16):
     
     global robot_position
 
@@ -126,133 +133,178 @@ def solve(maxStages = 5):
     Right = Bool('Right')
     Down = Bool('Down')
     Left = Bool('Left')
-
-    # s = Solver()
-
-    # InitialState = And(BlockedBottom, BlockedLeft, Not(BlockedRight), Not(BlockedTop), Not(OnGoal))
-    # GoalState = And(BlockedTop, BlockedRight, Not(BlockedLeft), Not(BlockedBottom), OnGoal)
-
-#     s.add( And(TouchingTop, TouchingLeft) )
-
-#     s.add( And( TouchingBottom, TouchingRight, onGoal)) 
-
-    # Add InitialState Constraint
-    # s.add(InitialState)
-
-    # Add GoalState Constraint
-    # s.add(GoalState)
         
     # exclusion axioms
-    # s.add( Or( Not(Up), Not(Down) ))
-    # s.add( Or( Not(Up), Not(Right) ))
-    # s.add( Or( Not(Up), Not(Left) ))
-    # s.add( Or( Not(Right), Not(Down) ))
-    # s.add( Or( Not(Right), Not(Left) ))
-    # s.add( Or( Not(Down), Not(Left) ))
 
     s = Solver()
 
-    while k < maxStages:
-        
-        conjunction = True
-        # exclusion axioms,
-        conjunction = And(conjunction, Or( Not(Up), Not(Down) ))
-        conjunction = And(conjunction, Or( Not(Up), Not(Right) ))
-        conjunction = And(conjunction, Or( Not(Up), Not(Left) ))
-        conjunction = And(conjunction, Or( Not(Right), Not(Down) ))
-        conjunction = And(conjunction, Or( Not(Right), Not(Left) ))
-        conjunction = And(conjunction, Or( Not(Down), Not(Left) ))
-        # Define Frame encodings (frame axioms)
-        conjunction = And(conjunction, Or( Up, Not(TouchingTop), TouchingTopk1 ) )
-        conjunction = And(conjunction, Or( Up, Right, Left, Not(BlockedTop), BlockedTopk1 ) ) 
-        conjunction = And(conjunction, Or( Left, Not(TouchingLeft), TouchingLeftk1 ))
-        conjunction = And(conjunction, Or( Left, Up, Down, Not(BlockedLeft), BlockedLeftk1 ) ) 
-        conjunction = And(conjunction, Or( Down, Not(TouchingBottom), TouchingBottomk1 ) )
-        conjunction = And(conjunction, Or( Down, Right, Left, Not(BlockedBottom), BlockedBottomk1) )
-        conjunction = And(conjunction, Or( Right, Not(TouchingRight), TouchingRightk1) )
-        conjunction = And(conjunction, Or( Right, Up, Down, Not(BlockedRight), BlockedRightk1 ) )
+    # exclusion axioms,
+    conjunction = Or( Not(Up), Not(Down) )
+    conjunction = And(conjunction, Or( Not(Up), Not(Right) ))
+    conjunction = And(conjunction, Or( Not(Up), Not(Left) ))
+    conjunction = And(conjunction, Or( Not(Right), Not(Down) ))
+    conjunction = And(conjunction, Or( Not(Right), Not(Left) ))
+    conjunction = And(conjunction, Or( Not(Down), Not(Left) ))
+   
+    # Define Frame encodings (frame axioms)
+#     conjunction = And(conjunction, Or( Up, Not(TouchingTop), TouchingTopk1 ) )
+#     conjunction = And(conjunction, Or( Up, Right, Left, Not(BlockedTop), BlockedTopk1 ) ) 
+#     conjunction = And(conjunction, Or( Left, Not(TouchingLeft), TouchingLeftk1 ))
+#     conjunction = And(conjunction, Or( Left, Up, Down, Not(BlockedLeft), BlockedLeftk1 ) ) 
+#     conjunction = And(conjunction, Or( Down, Not(TouchingBottom), TouchingBottomk1 ) )
+#     conjunction = And(conjunction, Or( Down, Right, Left, Not(BlockedBottom), BlockedBottomk1) )
+#     conjunction = And(conjunction, Or( Right, Not(TouchingRight), TouchingRightk1) )
+#     conjunction = And(conjunction, Or( Right, Up, Down, Not(BlockedRight), BlockedRightk1 ) )
 
-        conjunction = And(conjunction, Or( Up, Not(OnGoal), OnGoalk1 ) )
-        conjunction = And(conjunction, Or( Down, Not(OnGoal), OnGoalk1 ) )
-        conjunction = And(conjunction, Or( Right, Not(OnGoal), OnGoalk1 ) )
-        conjunction = And(conjunction, Or( Left, Not(OnGoal), OnGoalk1 ) )
+    conjunction = And(conjunction, Or( Up, Not(OnGoal), OnGoalk1 ) )
+    conjunction = And(conjunction, Or( Down, Not(OnGoal), OnGoalk1 ) )
+    conjunction = And(conjunction, Or( Right, Not(OnGoal), OnGoalk1 ) )
+    conjunction = And(conjunction, Or( Left, Not(OnGoal), OnGoalk1 ) )
 
-        # Add operator encoding for Up
-        conjunction = And(conjunction,Or(Not(Up), \
-            And(Not(TouchingTop), Not(BlockedTop), BlockedTopk1, BlockedLeftk1, \
-                BlockedRightk1, TouchingTopk1, TouchingLeftk1, TouchingRightk1, OnGoalk1)))
-        conjunction = And(conjunction,Or(Not(Right), \
-            And(Not(TouchingRight), Not(BlockedRight), BlockedTopk1, BlockedBottomk1, \
-                BlockedRightk1, TouchingTopk1, TouchingBottom, TouchingRightk1, OnGoalk1)))
-        conjunction = And(conjunction,Or(Not(Down), \
-            And(Not(TouchingBottom), Not(BlockedBottom), BlockedBottomk1, BlockedLeftk1, \
-                BlockedRightk1, TouchingBottomk1, TouchingRightk1, TouchingLeft, OnGoalk1)))
-        conjunction = And(conjunction,Or(Not(Left), \
-            And(Not(TouchingLeft), Not(BlockedLeft), BlockedBottomk1, BlockedLeftk1, \
-                BlockedTopk1, TouchingLeftk1, TouchingTopk1, TouchingBottomk1, OnGoalk1)))
+#     conjunction = And(conjunction, Or( Up, TouchingTop, Not(TouchingTopk1) ) )
+#     conjunction = And(conjunction, Or( Up, Right, Left, BlockedTop, Not(BlockedTopk1) ) ) 
+#     conjunction = And(conjunction, Or( Left, TouchingLeft, Not(TouchingLeftk1) ))
+#     conjunction = And(conjunction, Or( Left, Up, Down, BlockedLeft, Not(BlockedLeftk1) ) ) 
+#     conjunction = And(conjunction, Or( Down, TouchingBottom, Not(TouchingBottomk1) ) )
+#     conjunction = And(conjunction, Or( Down, Right, Left, BlockedBottom, Not(BlockedBottomk1)) )
+#     conjunction = And(conjunction, Or( Right, TouchingRight, Not(TouchingRightk1)) )
+#     conjunction = And(conjunction, Or( Right, Up, Down, BlockedRight, Not(BlockedRightk1) ) )
+
+#     conjunction = And(conjunction, Or( Up, OnGoal, Not(OnGoalk1) ) )
+#     conjunction = And(conjunction, Or( Down, OnGoal, Not(OnGoalk1) ) )
+#     conjunction = And(conjunction, Or( Right, OnGoal, Not(OnGoalk1) ) )
+#     conjunction = And(conjunction, Or( Left, OnGoal, Not(OnGoalk1) ) )
+
+
+    # Add operator encoding for Up
+#     conjunction = And(conjunction, Or(Not(Up), 
+#         And(Not(TouchingTop), Not(BlockedTop), BlockedTopk1, BlockedLeftk1, 
+#             BlockedRightk1, TouchingTopk1, TouchingLeftk1, TouchingRightk1, OnGoalk1)))
+
+#     conjunction = And(conjunction, Or(Not(Right), 
+#         And(Not(TouchingRight), Not(BlockedRight), BlockedTopk1, BlockedBottomk1, 
+#             BlockedRightk1, TouchingTopk1, TouchingBottom, TouchingRightk1, OnGoalk1)))
+
+#     conjunction = And(conjunction, Or(Not(Down), 
+#         And(Not(TouchingBottom), Not(BlockedBottom), BlockedBottomk1, BlockedLeftk1, 
+#             BlockedRightk1, TouchingBottomk1)))
+
+#     conjunction = And(conjunction, Or(Not(Left), 
+#         And(Not(TouchingLeft), Not(BlockedLeft), BlockedBottomk1, BlockedLeftk1, 
+#             BlockedTopk1, TouchingLeftk1, TouchingTopk1, TouchingBottomk1, OnGoalk1)))
+
+    conjunction = And(conjunction, Or(Not(Up), 
+        And(Not(TouchingTop), Not(BlockedTop), BlockedTopk1, TouchingTopk1)))
+
+    conjunction = And(conjunction, Or(Not(Right), 
+        And(Not(TouchingRight), Not(BlockedRight), BlockedRightk1, TouchingRightk1)))
+
+    conjunction = And(conjunction, Or(Not(Down), 
+        And(Not(TouchingBottom), Not(BlockedBottom), BlockedBottomk1, TouchingBottomk1)))
+
+    conjunction = And(conjunction, Or(Not(Left), 
+        And(Not(TouchingLeft), Not(BlockedLeft),  BlockedLeftk1,  TouchingLeftk1)))
+
+#     s.add(Not(And(Up == True, Down == False, Right == False, Left == False)))
+    s.add(Not(conjunction))
+
+    last_move = None
+
+    while k < maxStages - 1:
 
         # Add more constrains
-        # TODO: create functions for current states
-        # s.add(TouchingTop == touchTop(robot_position))
-        # s.add(BlockedTop == blockedTop(robot_position))
-        # s.add(TouchingBottom == touchBottom(robot_position))
-        # s.add(BlockedBottom == blockedBottom(robot_position))
-        # s.add(TouchingRight == touchRight(robot_position))
-        # s.add(BlockedRight == blockedRight(robot_position))
-        # s.add(TouchingLeft == touchLeft(robot_position))
-        # s.add(BlockedLeft == blockedLeft(robot_position))
-        # s.add(OnGoal == (robot_position==goal))
-        # print("Conjuection: " + str(conjunction))
-        conjunction = And(conjunction,TouchingTop == touchTop(robot_position))
-        print("Touching Top: " + str(touchTop(robot_position)))
-        conjunction = And(conjunction,BlockedTop == blockedTop(robot_position))
-        conjunction = And(conjunction,TouchingBottom == touchBottom(robot_position))
-        conjunction = And(conjunction,BlockedBottom == blockedBottom(robot_position))
-        conjunction = And(conjunction,TouchingRight == touchRight(robot_position))
-        conjunction = And(conjunction,BlockedRight == blockedRight(robot_position))
-        conjunction = And(conjunction,TouchingLeft == touchLeft(robot_position))
-        conjunction = And(conjunction,BlockedLeft == blockedLeft(robot_position))
-        conjunction = And(conjunction,OnGoal == (robot_position==goal))
-
+        s.add(Not(And(Up == False, Down == False, Right == False, Left == False)))
         s.add(Not(conjunction))
-        # s.add(Not(And(Up == False, Right == False, Left == False, Down == False)))
+        s.add(TouchingTop == touchTop(robot_position))
+        s.add(BlockedTop == blockedTop(robot_position))
+        s.add(TouchingBottom == touchBottom(robot_position))
+        s.add(BlockedBottom == blockedBottom(robot_position))
+        s.add(TouchingRight == touchRight(robot_position))
+        s.add(BlockedRight == blockedRight(robot_position))
+        s.add(TouchingLeft == touchLeft(robot_position))
+        s.add(BlockedLeft == blockedLeft(robot_position))
+        s.add(OnGoal == (robot_position==goal))
 
+        # s.add(Not(TouchingTop == touchTop(robot_position)))
+        # s.add(Not(BlockedTop == blockedTop(robot_position)))
+        # s.add(Not(TouchingBottom == touchBottom(robot_position)))
+        # s.add(Not(BlockedBottom == blockedBottom(robot_position)))
+        # s.add(Not(TouchingRight == touchRight(robot_position)))
+        # s.add(Not(BlockedRight == blockedRight(robot_position)))
+        # s.add(Not(TouchingLeft == touchLeft(robot_position)))
+        # s.add(Not(BlockedLeft == blockedLeft(robot_position)))
+        # s.add(Not(OnGoal == (robot_position==goal)))
 
-        print(s.check())
-        
-        # TODO: create functions for computing k+1 states
+        # s.add(Not(And(Not(Down), TouchingBottom)))
 
-        # results = {}
-        # robot_position_k1 = nextPositon(robot_position, results)
-        # s.add(BlockedBottomk1 == blockedBottom(robot_position_k1))
-        # s.add(BlockedLeftk1 == blockedLeft(robot_position_k1))
-        # s.add(BlockedRightk1 == blockedRight(robot_position_k1))
-        # s.add(TouchingTopk1 == touchTop(robot_position_k1))
-        # s.add(TouchingLeftk1 == touchLeft(robot_position_k1))
-        # s.add(TouchingRightk1 == touchRight(robot_position_k1))
-        # s.add(OnGoalk1 == (robot_position_k1==goal))
+        if last_move is not None:
+            s.add(last_move)
 
-        print(s.check())
+        # print(s)
+        if str(s.check()) != "sat":
+            break
 
-        # if s.check() == "sat":
         results = {
                 "Up": s.model().evaluate(Up),
                 "Down": s.model().evaluate(Down),
                 "Right": s.model().evaluate(Right),
                 "Left": s.model().evaluate(Left),
+                "OnGoal": s.model().evaluate(OnGoal),
+                "OnGoalk1": s.model().evaluate(OnGoalk1),
                 "TouchingTop": s.model().evaluate(TouchingTop),
-                "TouchingBottom": s.model().evaluate(TouchingBottom),
-                # "TouchingLeft": s.model().evaluate(TouchingLeft),
-                # "TouchingRight": s.model().evaluate(TouchingRight),
+                "TouchingTopk1": s.model().evaluate(TouchingTopk1),
                 "BlockedTop": s.model().evaluate(BlockedTop),
-                "TouchingTopk1": s.model().evaluate(TouchingTopk1),}
-        print(results, touchTop(robot_position), touchBottom(robot_position))
-        # print(results.get("Up"))
-        # print (nextPositon(robot_position, results))
+                "BlockedTopk1": s.model().evaluate(BlockedTopk1),
+                "TouchingBottom": s.model().evaluate(TouchingBottom),
+                "TouchingBottomk1": s.model().evaluate(TouchingBottomk1),
+                "BlockedBottom": s.model().evaluate(BlockedBottom),
+                "BlockedBottomk1": s.model().evaluate(BlockedBottomk1)}
+
+        # print(results)
+
+        if results["OnGoal"]:
+            print("Solved!")
+            break
+
+        # if the position has two possible actions, and already took the first action
+        # choose the next available action
+        actions = []
+        if results.get("Up"):
+                actions.append("Up")
+        if results.get("Down"):
+                actions.append("Down")
+        if results.get("Right"):
+                actions.append("Right")
+        if results.get("Left"):
+                actions.append("Left")
+        
+        
+        # print(actions)
+        if robot_position in pos_action.keys():
+                if len(pos_action[robot_position]) > 1:
+                        print("More than 1 action")
+                        temp = pos_action[robot_position]
+                        results[temp[0]] = False
+                        temp.pop(0)
+        else:
+                pos_action[robot_position] = actions
+                # print(pos_action[robot_position])
                 
 
-        # else:
-        # print(s.unsat_core())
+        robot_position, op = nextPositon(robot_position, results)
+
+        print(robot_position)
+
+        if op == "Up":
+            last_move = And(Down == False, Up == False)
+        elif op == "Down":
+            last_move = And(Up == False, Down == False)
+        elif op == "Right":
+            last_move = Left == False
+        elif op == "Left":
+            last_move = Right == False
+        else:
+            last_move = None
 
         k += 1
 
@@ -260,10 +312,7 @@ def solve(maxStages = 5):
         # results["Right"] = True
         # print(results)
 
-
-        # TODO: compute the next robot position
-        robot_position = nextPositon(robot_position, results)
-        # break
+        s.reset()
 
 
 
@@ -306,7 +355,4 @@ if __name__ == "__main__":
         print("Using default environment...")
 
 solve()
-
-
-
 
