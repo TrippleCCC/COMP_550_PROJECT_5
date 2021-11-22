@@ -46,43 +46,55 @@ def blockedRight(position):
                         return True
         return False
 
-# def robotPositon(current, result):
-#         has_obstacle = False
-#         if result.get(Up):
-#                 for o in obstacles:
-#                         if o[1] < current[1]:
-#                                 current[1] = o[1] + 1
-#                                 has_obstacle = True
-#                 if not has_obstacle:
-#                         current[1] = 0
+def nextPositon(current, result):
+        has_obstacle = False
+        if result.get("Up"):
+                print("Action: Up")
+                for o in obstacles:
+                        if o[1] < current[1]:
+                                # current[1] = o[1] + 1
+                                newPos = (current[0], o[1] + 1)
+                                has_obstacle = True
+                if not has_obstacle:
+                        # current[1] = 0
+                        newPos = (current[0], 0)
 
-#         elif result.get(Down):
-#                 for o in obstacles:
-#                         if o[1] > current[1]:
-#                                 current[1] = o[1] - 1
-#                                 has_obstacle = True
-#                 if not has_obstacle:
-#                         current[1] = len(environment) - 1
+        elif result.get("Down"):
+                print("Action: Down")
+                for o in obstacles:
+                        if o[1] > current[1]:
+                                # current[1] = o[1] - 1
+                                newPos = (current[0], o[1] - 1)
+                                has_obstacle = True
+                if not has_obstacle:
+                        # current[1] = len(environment) - 1
+                        newPos = (current[0], len(environment) - 1)
 
-#         elif result.get(Right):
-#                 for o in obstacles:
-#                         if o[0] > current[0]:
-#                                 current[0] = o[0] - 1
-#                                 has_obstacle = True
-#                 if not has_obstacle:
-#                         current[0] = len(environment[0]) - 1
+        elif result.get("Right"):
+                for o in obstacles:
+                        if o[0] > current[0]:
+                                # current[0] = o[0] - 1
+                                newPos = (o[0] - 1, current[1])
+                                has_obstacle = True
+                if not has_obstacle:
+                        # current[0] = len(environment[0]) - 1
+                        newPos = (len(environment[0]) - 1, current[1])
         
-#         elif result.get(Left):
-#                 for o in obstacles:
-#                         if o[0] < current[0]:
-#                                 current[0] = o[0] + 1
-#                                 has_obstacle = True
-#                 if not has_obstacle:
-#                         current[0] = 0
+        elif result.get("Left"):
+                for o in obstacles:
+                        if o[0] < current[0]:
+                                # current[0] = o[0] + 1
+                                newPos = (o[0] + 1, current[1])
+                                has_obstacle = True
+                if not has_obstacle:
+                        newPos = (0, current[1])
 
-#         return current
+        return newPos
 
 def solve(maxStages = 3):
+    
+    global robot_position
+
     k = 0
 
     # Define states 
@@ -164,24 +176,30 @@ def solve(maxStages = 3):
 
 
         # TODO: create functions for computing k+1 states
-        s.add(BlockedBottomk1 == False)
-        s.add(BlockedLeftk1 == False)
-        s.add(BlockedRightk1 == False)
-        s.add(TouchingTopk1 == True)
-        s.add(TouchingLeftk1 == True)
-        s.add(TouchingRightk1 == False)
-        s.add(OnGoalk1 == False)
+        robot_position_k1 = nextPositon(robot_position, results)
+        s.add(BlockedBottomk1 == blockedBottom(robot_position_k1))
+        s.add(BlockedLeftk1 == blockedLeft(robot_position_k1))
+        s.add(BlockedRightk1 == blockedRight(robot_position_k1))
+        s.add(TouchingTopk1 == touchTop(robot_position_k1))
+        s.add(TouchingLeftk1 == touchLeft(robot_position_k1))
+        s.add(TouchingRightk1 == touchRight(robot_position_k1))
+        s.add(OnGoalk1 == (robot_position_k1==goal))
 
         print(s.check())
-        if s.check:
+
+        if s.check() == sat:
                 results = {
-                        Up: s.model().evaluate(Up),
-                        Down: s.model().evaluate(Down),
-                        Right: s.model().evaluate(Right),
-                        Left: s.model().evaluate(Left)}
+                        "Up": s.model().evaluate(Up),
+                        "Down": s.model().evaluate(Down),
+                        "Right": s.model().evaluate(Right),
+                        "Left": s.model().evaluate(Left)}
                 print(results)
-                print(results.get(Up))
-                # print (robotPositon(robot_position, results))
+                print(results.get("Up"))
+                print (nextPositon(robot_position, results))
+                robot_position = nextPositon(robot_position, results)
+
+        else:
+                print(s.unsat_core())
 
         # Choose one result
 
