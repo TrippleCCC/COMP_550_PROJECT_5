@@ -1,6 +1,6 @@
 
 from z3 import Bool, Solver, Or, And, Not, sat
-import yaml
+# import yaml
 import argparse
 
 environment = [
@@ -129,11 +129,15 @@ def solve(maxStages = 3):
 
     s = Solver()
 
+#     s.add( And(TouchingTop, TouchingLeft) )
+
+#     s.add( And( TouchingBottom, TouchingRight, onGoal)) 
+
     # Add InitialState Constraint
-    # s.add(Not(OnGoal))
+#     s.add(Not(OnGoal))
 
     # Add GoalState Constraint
-    # s.add(OnGoal)
+#     s.add(OnGoal)
         
     # TODO: exclusion axioms
     s.add( Or( Not(Up), Not(Down) ))
@@ -187,16 +191,6 @@ def solve(maxStages = 3):
         s.add(OnGoal == (robot_position==goal))
 
 
-        # TODO: create functions for computing k+1 states
-        global results
-        robot_position_k1 = nextPositon(robot_position, results)
-        s.add(BlockedBottomk1 == blockedBottom(robot_position_k1))
-        s.add(BlockedLeftk1 == blockedLeft(robot_position_k1))
-        s.add(BlockedRightk1 == blockedRight(robot_position_k1))
-        s.add(TouchingTopk1 == touchTop(robot_position_k1))
-        s.add(TouchingLeftk1 == touchLeft(robot_position_k1))
-        s.add(TouchingRightk1 == touchRight(robot_position_k1))
-        s.add(OnGoalk1 == (robot_position_k1==goal))
 
         print(s.check())
 
@@ -205,13 +199,25 @@ def solve(maxStages = 3):
                         "Up": s.model().evaluate(Up),
                         "Down": s.model().evaluate(Down),
                         "Right": s.model().evaluate(Right),
-                        "Left": s.model().evaluate(Left)}
+                        "Left": s.model().evaluate(Left),
+                        "TouchingTop": s.model().evaluate(TouchingTop)}
                 print(results)
                 print (nextPositon(robot_position, results))
                 
 
         else:
                 print(s.unsat_core())
+
+        
+        # TODO: create functions for computing k+1 states
+        robot_position_k1 = nextPositon(robot_position, results)
+        s.add(BlockedBottomk1 == blockedBottom(robot_position_k1))
+        s.add(BlockedLeftk1 == blockedLeft(robot_position_k1))
+        s.add(BlockedRightk1 == blockedRight(robot_position_k1))
+        s.add(TouchingTopk1 == touchTop(robot_position_k1))
+        s.add(TouchingLeftk1 == touchLeft(robot_position_k1))
+        s.add(TouchingRightk1 == touchRight(robot_position_k1))
+        s.add(OnGoalk1 == (robot_position_k1==goal))
 
         # Choose one result
         # results["Right"] = True
@@ -262,7 +268,7 @@ if __name__ == "__main__":
         # TODO: implement default environment
         print("Using default environment...")
 
-    # solve()
+solve()
 
 
 
