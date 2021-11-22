@@ -3,10 +3,10 @@ from z3 import Bool, Solver, Or, And, Not, sat, Implies
 # import yaml
 import argparse
 
-environment = [
-        [0, 0, 0, 0], 
-        [0, 0, 0, 0], 
-        [0, 0, 0, 0]]
+# environment = [
+#         [0, 0, 0, 0], 
+#         [0, 0, 0, 0], 
+#         [0, 0, 0, 0]]
 
 # environment = [
 #         [0, 0, 0, 0], 
@@ -14,23 +14,23 @@ environment = [
 #         [0, 0, 0, 0],
 #         [0, 0, 0, 0]]
 
-# environment = [
-#         [0, 0, 0, 0, 0, 0, 0, 0], 
-#         [0, 0, 0, 0, 0, 0, 0, 0], 
-#         [0, 0, 0, 0, 0, 0, 0, 0],
-#         [0, 0, 0, 0, 0, 0, 0, 0]]
+environment = [
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0]]
 
-# robot_position = (3, 0)
-robot_position = (0, 0)
-goal = (2, 0)
-# goal = (1, 7)
+robot_position = (3, 0)
+# robot_position = (0, 0)
+# goal = (2, 0)
+goal = (1, 7)
 # goal = (3, 1)
 
 
-obstacles = [(1, 0), (1, 1), (1, 2)]
+# obstacles = [(1, 0), (1, 1), (1, 2)]
 # obstacles = [(1,1), (1,2), (1, 0)]
 # obstacles = [(3, 0), (1, 0), (1, 1), (2, 2),  (0, 3)]
-# obstacles = [(3, 1), (0, 2), (3, 4), (2, 6)]
+obstacles = [(3, 1), (0, 2), (3, 4), (2, 6)]
 
 pos_action = {}
 
