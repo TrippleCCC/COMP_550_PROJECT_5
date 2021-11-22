@@ -1,4 +1,6 @@
 from z3 import Bool, Solver, Or, And, Not
+import yaml
+import argparse
 
 environment = [
         [0, 0, 0, 0], 
@@ -219,7 +221,45 @@ def solve(maxStages = 3):
         robot_position = nextPositon(robot_position, results)
         # break
 
-solve()
+def readEnviornment(filename):
+    robotStart = None
+    robotGoal = None
+    envDimimensions = None
+    obstacles = []
+    with open(filename) as file:
+        envYaml = yaml.full_load(file)
+
+        if envYaml:
+            envDimimensions = (envYaml["dimensions"]["width"], envYaml["dimensions"]["height"])
+
+            robotStart = (envYaml["robot_start"]["x"], envYaml["robot_start"]["y"])
+            robotGoal = (envYaml["robot_goal"]["x"], envYaml["robot_goal"]["y"])
+
+            for _, coord in envYaml["obstacles"].items():
+                obstacles.append((coord["x"], coord["y"]))
+
+
+    return envDimimensions, robotStart, robotGoal, obstacles
+
+# Define command line arguments
+parser = argparse.ArgumentParser(description="Sokoban on Ice solver.")
+parser.add_argument("--env", help="yaml file describing the input environment")
+
+if __name__ == "__main__":
+    # TODO: read in environment
+
+    args = vars(parser.parse_args())
+
+    envFile = args["env"]
+
+    if envFile:
+        envDimimensions, robotStart, robotGoal, obstacles = readEnviornment(envFile)
+        print(envDimimensions, robotStart, robotGoal, obstacles)
+    else:
+        # TODO: implement default environment
+        print("Using default environment...")
+
+    # solve()
 
 
 
