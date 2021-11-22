@@ -1,4 +1,4 @@
-from z3 import Bool, Solver, Or, And, Not
+from z3 import Bool, Solver, Or, And, Not, sat
 
 environment = [
         [0, 0, 0, 0], 
@@ -8,7 +8,10 @@ environment = [
 robot_position = (0, 0)
 goal = (2, 3)
 
-obstacles = [(1,1), (1,2)]
+obstacles = [(0,2), (1,2)]
+
+results = {}
+newPos = (0, 0)
 
 def touchTop(position):
         return position[1] == 0
@@ -48,48 +51,43 @@ def blockedRight(position):
 
 def nextPositon(current, result):
         has_obstacle = False
-        newPos = (0, 0)
-        if result.get("Up"):
+        global newPos
+        if result.get("Up") == Bool('Up'):
                 print("Action: Up")
                 for o in obstacles:
-                        if o[1] < current[1]:
-                                # current[1] = o[1] + 1
+                        if o[1] < current[1] and o[0] == current[0]:
                                 newPos = (current[0], o[1] + 1)
                                 has_obstacle = True
                 if not has_obstacle:
-                        # current[1] = 0
                         newPos = (current[0], 0)
 
-        elif result.get("Down"):
+        elif result.get("Down") == Bool('Down'):
                 print("Action: Down")
                 for o in obstacles:
-                        if o[1] > current[1]:
-                                # current[1] = o[1] - 1
+                        if o[1] > current[1] and o[0] == current[0]:
                                 newPos = (current[0], o[1] - 1)
                                 has_obstacle = True
-                if not has_obstacle:
-                        # current[1] = len(environment) - 1
+                if has_obstacle == False:
                         newPos = (current[0], len(environment) - 1)
 
-        elif result.get("Right"):
+        elif result.get("Right") == Bool('Right'):
                 for o in obstacles:
-                        if o[0] > current[0]:
-                                # current[0] = o[0] - 1
+                        if o[0] > current[0] and o[1] == current[1]:
                                 newPos = (o[0] - 1, current[1])
                                 has_obstacle = True
-                if not has_obstacle:
-                        # current[0] = len(environment[0]) - 1
+                if has_obstacle == False:
                         newPos = (len(environment[0]) - 1, current[1])
+                        print(newPos)
         
-        elif result.get("Left"):
+        elif result.get("Left") == Bool('left'):
                 for o in obstacles:
-                        if o[0] < current[0]:
-                                # current[0] = o[0] + 1
+                        if o[0] < current[0]  and o[1] == current[1]:
                                 newPos = (o[0] + 1, current[1])
                                 has_obstacle = True
                 if not has_obstacle:
                         newPos = (0, current[1])
 
+        print(newPos)
         return newPos
 
 def solve(maxStages = 3):
@@ -180,14 +178,14 @@ def solve(maxStages = 3):
         s.add(TouchingBottom == touchBottom(robot_position))
         s.add(BlockedBottom == blockedBottom(robot_position))
         s.add(TouchingRight == touchRight(robot_position))
-        # s.add(BlockedRight == blockedRight(robot_position))
+        s.add(BlockedRight == blockedRight(robot_position))
         s.add(TouchingLeft == touchLeft(robot_position))
         s.add(BlockedLeft == blockedLeft(robot_position))
         s.add(OnGoal == (robot_position==goal))
 
 
         # TODO: create functions for computing k+1 states
-        results = {}
+        global results
         robot_position_k1 = nextPositon(robot_position, results)
         s.add(BlockedBottomk1 == blockedBottom(robot_position_k1))
         s.add(BlockedLeftk1 == blockedLeft(robot_position_k1))
@@ -199,21 +197,23 @@ def solve(maxStages = 3):
 
         print(s.check())
 
-        # if s.check() == "sat":
-        results = {
-                "Up": s.model().evaluate(Up),
-                "Down": s.model().evaluate(Down),
-                "Right": s.model().evaluate(Right),
-                "Left": s.model().evaluate(Left)}
-        print(results)
-        print(results.get("Up"))
-        print (nextPositon(robot_position, results))
+        if s.check() == sat:
+                results = {
+                        "Up": s.model().evaluate(Up),
+                        "Down": s.model().evaluate(Down),
+                        "Right": s.model().evaluate(Right),
+                        "Left": s.model().evaluate(Left)}
+                print(results)
+                print (nextPositon(robot_position, results))
                 
 
-        # else:
-        print(s.unsat_core())
+        else:
+                print(s.unsat_core())
 
         # Choose one result
+        # results["Right"] = True
+        # print(results)
+
 
         # TODO: compute the next robot position
         robot_position = nextPositon(robot_position, results)
