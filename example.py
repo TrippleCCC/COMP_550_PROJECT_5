@@ -3,6 +3,11 @@ from z3 import Bool, Solver, Or, And, Not, sat, Implies
 # import yaml
 import argparse
 
+environment = [
+        [0, 0, 0], 
+        [0, 0, 0], 
+        [0, 0, 0]]
+
 # environment = [
 #         [0, 0, 0, 0], 
 #         [0, 0, 0, 0], 
@@ -14,23 +19,36 @@ import argparse
 #         [0, 0, 0, 0],
 #         [0, 0, 0, 0]]
 
-environment = [
-        [0, 0, 0, 0, 0, 0, 0, 0], 
-        [0, 0, 0, 0, 0, 0, 0, 0], 
-        [0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0]]
+# environment = [
+#         [0, 0, 0, 0, 0, 0, 0, 0], 
+#         [0, 0, 0, 0, 0, 0, 0, 0], 
+#         [0, 0, 0, 0, 0, 0, 0, 0],
+#         [0, 0, 0, 0, 0, 0, 0, 0]]
 
-robot_position = (3, 0)
-# robot_position = (0, 0)
+# robot_position = (3, 0)
+robot_position = (0, 0)
+goal = (2, 2)
 # goal = (2, 0)
-goal = (1, 7)
+# goal = (1, 7)
 # goal = (3, 1)
 
 
 # obstacles = [(1, 0), (1, 1), (1, 2)]
 # obstacles = [(1,1), (1,2), (1, 0)]
 # obstacles = [(3, 0), (1, 0), (1, 1), (2, 2),  (0, 3)]
-obstacles = [(3, 1), (0, 2), (3, 4), (2, 6)]
+
+# obstacles = [(3, 1), (0, 2), (3, 4), (2, 6)]
+
+obstacles = [(1, 0)]
+box = [(0, 1)]
+
+# if boxes are moved to corners, they become obstacles
+def boxToObs ():
+        global box
+        for b in box:
+                if(b == (0, 0) or b == (0, len(environment[0])-1) or b == (len(environment)-1, 0) or b == (len(environment), len(environment[0])-1)):
+                        box.remove(b)
+                        obstacles.append(b)
 
 pos_action = {}
 
@@ -47,33 +65,61 @@ def touchRight(position):
         return position[1] == len(environment[0]) - 1
 
 def blockedTop(position):
+        for b in box:
+                if position[0] == b[0] + 1 and position[1] == b[1] and (blockedTop(b) or touchTop(b)):
+                        return True
+
         for o in obstacles:
                 if position[0] == o[0] + 1 and position[1] == o[1]:
                         return True
         return False
 
 def blockedBottom(position):
+        for b in box:
+                if position[0] == b[0] - 1 and position[1] == b[1] and (blockedBottom(b) or touchBottom(b)):
+                        return True
+        
         for o in obstacles:
                 if position[0] == o[0] - 1 and position[1] == o[1]:
                         return True
         return False
 
 def blockedLeft(position):
+        for b in box:
+                if position[1] == b[1] + 1 and position[0] == b[0] and (blockedLeft(b) or touchLeft(b)):
+                        return True
         for o in obstacles:
                 if position[1] == o[1] + 1 and position[0] == o[0]:
                         return True
         return False
 
 def blockedRight(position):
+
+        for b in box:
+                if position[1] == b[1] - 1 and position[0] == b[0] and (blockedRight(b) or touchRight(b)):
+                        print("Blocked by box")
+                        return True
+
         for o in obstacles:
                 if position[1] == o[1] - 1 and position[0] == o[0]:
                         return True
         return False
 
+
 def nextPositon(current, result):
+        global box
+        newBox = []
         newPos = current
         if result.get("Up"):
                 print("Action: Up")
+                
+                # move the box in the direction of robot
+                for b in box:
+                        while (newPos[1] == b[1] and newPos[0] > b[0] and (not blockedTop(b) and not touchTop(b))):
+                                b = (b[0]-1, b[1])
+                        newBox.append(b)
+                box = newBox
+
                 while True:
                     if blockedTop(newPos) or touchTop(newPos):
                         return newPos, "Up"
@@ -81,13 +127,29 @@ def nextPositon(current, result):
 
         elif result.get("Down"):
                 print("Action: Down")
+                
+                for b in box:
+                        while (newPos[1] == b[1] and newPos[0] < b[0] and (not blockedBottom(b) and not touchBottom(b))):
+                                b = (b[0]+1, b[1])
+                        newBox.append(b)
+                box = newBox
+
                 while True:
                     if blockedBottom(newPos) or touchBottom(newPos):
                         return newPos, "Down"
                     newPos = (newPos[0] + 1, newPos[1])
 
+
         elif result.get("Right"):
                 print("Action: Right")
+
+                for b in box:
+                        while newPos[0] == b[0] and newPos[1] < b[1] and blockedRight(b) == False and touchRight(b) == False:
+                                print("Move box right")
+                                b = (b[0], b[1] + 1)
+                        newBox.append(b)
+                box = newBox
+
                 while True:
                     if blockedRight(newPos) or touchRight(newPos):
                         return newPos, "Right"
@@ -95,12 +157,20 @@ def nextPositon(current, result):
 
         elif result.get("Left"):
                 print("Action: Left")
+
+                for b in box:
+                        while (newPos[0] == b[0] and newPos[0] > b[0] and (not blockedLeft(b) and not touchLeft(b))):
+                                b = (b[0], b[1] - 1)
+                        newBox.append(b)
+                box = newBox
+
                 while True:
                     if blockedLeft(newPos) or touchLeft(newPos):
                         return newPos, "Left"
                     newPos = (newPos[0], newPos[1] - 1)
 
         return newPos, None
+
 
 def solve(maxStages = 16):
     
@@ -261,6 +331,7 @@ def solve(maxStages = 16):
                 "BlockedBottomk1": s.model().evaluate(BlockedBottomk1)}
 
         # print(results)
+        print(box)
 
         if results["OnGoal"]:
             print("Solved!")
