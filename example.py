@@ -8,10 +8,10 @@ import argparse
 #         [0, 0, 0], 
 #         [0, 0, 0]]
 
-environment = [
-        [0, 0, 0, 0], 
-        [0, 0, 0, 0], 
-        [0, 0, 0, 0]]
+# environment = [
+#         [0, 0, 0, 0], 
+#         [0, 0, 0, 0], 
+#         [0, 0, 0, 0]]
 
 # environment = [
 #         [0, 0, 0, 0], 
@@ -25,13 +25,13 @@ environment = [
 #         [0, 0, 0, 0, 0, 0, 0, 0],
 #         [0, 0, 0, 0, 0, 0, 0, 0]]
 
-# environment = [
-#         [0, 0, 0, 0, 0, 0], 
-#         [0, 0, 0, 0, 0, 0],
-#         [0, 0, 0, 0, 0, 0],
-#         [0, 0, 0, 0, 0, 0],
-#         [0, 0, 0, 0, 0, 0],
-#         [0, 0, 0, 0, 0, 0]]
+environment = [
+        [0, 0, 0, 0, 0, 0], 
+        [0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0]]
 
 # robot_position = (3, 0)
 # robot_position = (0, 0)
@@ -90,9 +90,6 @@ def blockedTop(position):
 def blockedBottom(position):
         for b in box:
                 if position[0] == b[0] - 1 and position[1] == b[1] and (blockedBottom(b) or touchBottom(b)):
-                        print("Box position: "+ str(b))
-                        print("Position: " + str(position))
-                        print("Blocked by box bottom")
                         return True
         
         for o in obstacles:
@@ -126,44 +123,17 @@ def nextPositon(current, result):
         global box
         newBox = []
         newPos = current
-        if result.get("Up"):
-                print("Action: Up")
-                
-                # move the box in the direction of robot
-                for b in box:
-                        while (newPos[1] == b[1] and newPos[0] > b[0] and (not blockedTop(b) and not touchTop(b))):
-                                b = (b[0]-1, b[1])
-                        newBox.append(b)
-                box = newBox
-
-                while True:
-                    if blockedTop(newPos) or touchTop(newPos):
-                        return newPos, "Up"
-                    newPos = (newPos[0] - 1, newPos[1])
-
-        elif result.get("Down"):
-                print("Action: Down")
-                
-                for b in box:
-                        while (newPos[1] == b[1] and newPos[0] < b[0] and blockedBottom(b) == False and touchBottom(b) == False):
-                                b = (b[0] + 1, b[1])
-                                print("Move box down")
-                        newBox.append(b)
-                box = newBox
-
-                while True:
-                    if blockedBottom(newPos) or touchBottom(newPos):
-                        return newPos, "Down"
-                    newPos = (newPos[0] + 1, newPos[1])
-
-
-        elif result.get("Right"):
+        if result.get("Right"):
                 print("Action: Right")
 
                 for b in box:
-                        while newPos[0] == b[0] and newPos[1] < b[1] and blockedRight(b) == False and touchRight(b) == False:
-                                print("Move box right")
-                                b = (b[0], b[1] + 1)
+
+                        for o in obstacles:
+                                if not(b[0] == o[0] == newPos[0] and newPos[1] < o[1] < b[1]):
+
+                                        while newPos[0] == b[0] and newPos[1] < b[1] and blockedRight(b) == False and touchRight(b) == False:
+                                                # print("Move box right")
+                                                b = (b[0], b[1] + 1)
                         newBox.append(b)
                 box = newBox
 
@@ -176,8 +146,11 @@ def nextPositon(current, result):
                 print("Action: Left")
 
                 for b in box:
-                        while (newPos[0] == b[0] and newPos[0] > b[0] and (not blockedLeft(b) and not touchLeft(b))):
-                                b = (b[0], b[1] - 1)
+                        for o in obstacles:
+                                if not(b[0] == o[0] == newPos[0] and newPos[1] > o[1] > b[1]):
+                                        while (newPos[0] == b[0] and newPos[1] > b[1] and blockedLeft(b) == False and touchLeft(b) == False):
+                                                b = (b[0], b[1] - 1)
+                                # print("Box: " + str(b))
                         newBox.append(b)
                 box = newBox
 
@@ -185,11 +158,47 @@ def nextPositon(current, result):
                     if blockedLeft(newPos) or touchLeft(newPos):
                         return newPos, "Left"
                     newPos = (newPos[0], newPos[1] - 1)
+        
+        elif result.get("Up"):
+                print("Action: Up")
+                
+                # move the box in the direction of robot
+                for b in box:
+                        for o in obstacles:
+                                if not(b[0] == o[0] == newPos[0] and newPos[1] > o[1] > b[1]):
+                                        while (newPos[1] == b[1] and newPos[0] > b[0] and blockedTop(b) == False and touchTop(b) == False):
+                                                b = (b[0]-1, b[1])
+                        newBox.append(b)
+                box = newBox
+
+                while True:
+                    if blockedTop(newPos) or touchTop(newPos):
+                        return newPos, "Up"
+                    newPos = (newPos[0] - 1, newPos[1])
+
+        elif result.get("Down"):
+                print("Action: Down")
+                
+                for b in box:
+                        for o in obstacles:
+                                if not(b[1] == o[1] == newPos[1] and newPos[0] < o[0] < b[0]):
+                                        while (newPos[1] == b[1] and newPos[0] < b[0] and blockedBottom(b) == False and touchBottom(b) == False):
+                                                b = (b[0] + 1, b[1])
+                        newBox.append(b)
+                box = newBox
+
+                while True:
+                    if blockedBottom(newPos) or touchBottom(newPos):
+                        return newPos, "Down"
+                    newPos = (newPos[0] + 1, newPos[1])
+
+
+
 
         return newPos, None
 
 
-def solve(maxStages = 16):
+def solve(maxStages = 20):
     
     global robot_position
 
@@ -337,17 +346,18 @@ def solve(maxStages = 16):
                 "Right": s.model().evaluate(Right),
                 "Left": s.model().evaluate(Left),
                 "OnGoal": s.model().evaluate(OnGoal),
-                "OnGoalk1": s.model().evaluate(OnGoalk1),
-                "TouchingTop": s.model().evaluate(TouchingTop),
-                "TouchingTopk1": s.model().evaluate(TouchingTopk1),
-                "BlockedTop": s.model().evaluate(BlockedTop),
-                "BlockedTopk1": s.model().evaluate(BlockedTopk1),
-                "TouchingBottom": s.model().evaluate(TouchingBottom),
-                "TouchingBottomk1": s.model().evaluate(TouchingBottomk1),
-                "BlockedBottom": s.model().evaluate(BlockedBottom),
-                "BlockedBottomk1": s.model().evaluate(BlockedBottomk1)}
+                "OnGoalk1": s.model().evaluate(OnGoalk1)
+                # "TouchingTop": s.model().evaluate(TouchingTop),
+                # "TouchingTopk1": s.model().evaluate(TouchingTopk1),
+                # "BlockedTop": s.model().evaluate(BlockedTop),
+                # "BlockedTopk1": s.model().evaluate(BlockedTopk1),
+                # "TouchingBottom": s.model().evaluate(TouchingBottom),
+                # "TouchingBottomk1": s.model().evaluate(TouchingBottomk1),
+                # "BlockedBottom": s.model().evaluate(BlockedBottom),
+                # "BlockedBottomk1": s.model().evaluate(BlockedBottomk1)
+                }
 
-        # print(results)
+        print(results)
         print(box)
 
         if results["OnGoal"]:
