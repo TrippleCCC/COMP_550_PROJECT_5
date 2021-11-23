@@ -3,15 +3,15 @@ from z3 import Bool, Solver, Or, And, Not, sat, Implies
 # import yaml
 import argparse
 
-environment = [
-        [0, 0, 0], 
-        [0, 0, 0], 
-        [0, 0, 0]]
-
 # environment = [
-#         [0, 0, 0, 0], 
-#         [0, 0, 0, 0], 
-#         [0, 0, 0, 0]]
+#         [0, 0, 0], 
+#         [0, 0, 0], 
+#         [0, 0, 0]]
+
+environment = [
+        [0, 0, 0, 0], 
+        [0, 0, 0, 0], 
+        [0, 0, 0, 0]]
 
 # environment = [
 #         [0, 0, 0, 0], 
@@ -25,12 +25,22 @@ environment = [
 #         [0, 0, 0, 0, 0, 0, 0, 0],
 #         [0, 0, 0, 0, 0, 0, 0, 0]]
 
+# environment = [
+#         [0, 0, 0, 0, 0, 0], 
+#         [0, 0, 0, 0, 0, 0],
+#         [0, 0, 0, 0, 0, 0],
+#         [0, 0, 0, 0, 0, 0],
+#         [0, 0, 0, 0, 0, 0],
+#         [0, 0, 0, 0, 0, 0]]
+
 # robot_position = (3, 0)
-robot_position = (0, 0)
-goal = (2, 2)
+# robot_position = (0, 0)
+robot_position = (0, 1)
+# goal = (2, 2)
 # goal = (2, 0)
 # goal = (1, 7)
 # goal = (3, 1)
+goal = (4, 3)
 
 
 # obstacles = [(1, 0), (1, 1), (1, 2)]
@@ -39,8 +49,11 @@ goal = (2, 2)
 
 # obstacles = [(3, 1), (0, 2), (3, 4), (2, 6)]
 
-obstacles = [(1, 0)]
-box = [(0, 1)]
+# obstacles = [(1, 0)]
+# box = [(1, 1), (0, 2)]
+
+obstacles = [(0, 0), (0, 3), (2, 2), (2, 5), (4, 1), (5, 2)]
+box = [(1, 1), (1, 4), (3, 4), (5, 4)]
 
 # if boxes are moved to corners, they become obstacles
 def boxToObs ():
@@ -77,6 +90,9 @@ def blockedTop(position):
 def blockedBottom(position):
         for b in box:
                 if position[0] == b[0] - 1 and position[1] == b[1] and (blockedBottom(b) or touchBottom(b)):
+                        print("Box position: "+ str(b))
+                        print("Position: " + str(position))
+                        print("Blocked by box bottom")
                         return True
         
         for o in obstacles:
@@ -129,8 +145,9 @@ def nextPositon(current, result):
                 print("Action: Down")
                 
                 for b in box:
-                        while (newPos[1] == b[1] and newPos[0] < b[0] and (not blockedBottom(b) and not touchBottom(b))):
-                                b = (b[0]+1, b[1])
+                        while (newPos[1] == b[1] and newPos[0] < b[0] and blockedBottom(b) == False and touchBottom(b) == False):
+                                b = (b[0] + 1, b[1])
+                                print("Move box down")
                         newBox.append(b)
                 box = newBox
 
