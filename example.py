@@ -2,6 +2,12 @@
 from z3 import Bool, Solver, Or, And, Not, sat, Implies
 # import yaml
 import argparse
+import random
+import numpy as np
+
+import matplotlib.pyplot as plt
+from matplotlib import colors
+import matplotlib
 
 # environment = [
 #         [0, 0, 0], 
@@ -55,6 +61,39 @@ goal = (4, 3)
 obstacles = [(0, 0), (0, 3), (2, 2), (2, 5), (4, 1), (5, 2)]
 box = [(1, 1), (1, 4), (3, 4), (5, 4)]
 
+
+
+def draw():
+        N = 6
+        # make an empty data set
+        data = np.ones((6, 6)) * np.nan
+        # fill in some fake data
+        for b in box:
+                data[b[0], b[1]] = 1
+        for o in obstacles:
+                data[o[0], o[1]] = 0
+
+        data[goal[0], goal[1]] = 2
+
+        data[robot_position[0], robot_position[1]] = 3
+
+        # make a figure + axes
+        fig, ax = plt.subplots(1, 1, tight_layout=True)
+        # make color map
+        my_cmap = matplotlib.colors.ListedColormap(['k', 'r', 'g', 'b'])
+        # set the 'bad' values (nan) to be white and transparent
+        my_cmap.set_bad(color='w', alpha=0)
+        # draw the grid
+        for x in range(N + 1):
+                ax.axhline(x, lw=2, color='k', zorder=5)
+                ax.axvline(x, lw=2, color='k', zorder=5)
+        # draw the boxes
+        ax.imshow(data, interpolation='none', cmap=my_cmap, extent=[0, N, 0, N], zorder=0)
+        # turn off the axis labels
+        ax.axis('off')
+
+        plt.show()
+draw()
 # if boxes are moved to corners, they become obstacles
 def boxToObs ():
         global box
@@ -159,6 +198,22 @@ def nextPositon(current, result):
                         return newPos, "Left"
                     newPos = (newPos[0], newPos[1] - 1)
         
+        elif result.get("Down"):
+                print("Action: Down")
+                
+                for b in box:
+                        for o in obstacles:
+                                if not(b[1] == o[1] == newPos[1] and newPos[0] < o[0] < b[0]):
+                                        while (newPos[1] == b[1] and newPos[0] < b[0] and blockedBottom(b) == False and touchBottom(b) == False):
+                                                b = (b[0] + 1, b[1])
+                        newBox.append(b)
+                box = newBox
+
+                while True:
+                    if blockedBottom(newPos) or touchBottom(newPos):
+                        return newPos, "Down"
+                    newPos = (newPos[0] + 1, newPos[1])
+
         elif result.get("Up"):
                 print("Action: Up")
                 
@@ -176,29 +231,11 @@ def nextPositon(current, result):
                         return newPos, "Up"
                     newPos = (newPos[0] - 1, newPos[1])
 
-        elif result.get("Down"):
-                print("Action: Down")
-                
-                for b in box:
-                        for o in obstacles:
-                                if not(b[1] == o[1] == newPos[1] and newPos[0] < o[0] < b[0]):
-                                        while (newPos[1] == b[1] and newPos[0] < b[0] and blockedBottom(b) == False and touchBottom(b) == False):
-                                                b = (b[0] + 1, b[1])
-                        newBox.append(b)
-                box = newBox
-
-                while True:
-                    if blockedBottom(newPos) or touchBottom(newPos):
-                        return newPos, "Down"
-                    newPos = (newPos[0] + 1, newPos[1])
-
-
-
 
         return newPos, None
 
 
-def solve(maxStages = 20):
+def solve(maxStages = 25):
     
     global robot_position
 
@@ -377,21 +414,37 @@ def solve(maxStages = 20):
                 actions.append("Left")
         
         
-        # print(actions)
-        if robot_position in pos_action.keys():
-                if len(pos_action[robot_position]) > 1:
-                        print("More than 1 action")
-                        temp = pos_action[robot_position]
-                        results[temp[0]] = False
-                        temp.pop(0)
-        else:
-                pos_action[robot_position] = actions
-                # print(pos_action[robot_position])
+        # # print(actions)
+        # if robot_position in pos_action.keys():
+        #         if len(pos_action[robot_position]) > 1:
+        #                 print("More than 1 action")
+        #                 temp = pos_action[robot_position]
+                        
+        #                 # # use the next available action
+        #                 # results[temp[0]] = False
+        #                 # temp.pop(0)
+
+        # else:
+        #         pos_action[robot_position] = actions
+        #         # print(pos_action[robot_position])
                 
+        if len(actions) > 1:
+                # randomly choose an action
+                        print("More than one action")
+                        results["Up"] = False
+                        results["Down"] = False
+                        results["Left"] = False
+                        results["Right"] = False
+
+                        index = random.randint(0, len(actions) - 1)
+                        results[actions[index]] = True
+  
+
 
         robot_position, op = nextPositon(robot_position, results)
 
         print(robot_position)
+        draw()
 
         if op == "Up":
             last_move = And(Down == False, Up == False)
@@ -453,4 +506,5 @@ if __name__ == "__main__":
         print("Using default environment...")
 
 solve()
+# draw()
 
