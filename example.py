@@ -74,31 +74,23 @@ def createEnvironment(file):
                 temp = x.strip().split(' ')
                 print(temp[0])
                 if temp[0] == 'size':
-                        print("size")
                         environment = np.ones((int(temp[1]), int(temp[2])))
                 if temp[0] == 'g':
                         goal = (int(temp[1]), int(temp[2]))
                 if temp[0] == 'r':
                         robot_position = (int(temp[1]), int(temp[2]))
                 if temp[0] == 'movable':
-                        print("Moveable")
                         temp = next(f)
                         while temp != 'obstacle\n':
-                                print(temp)
                                 temp1 = temp.strip().split(' ')
                                 box.append((int(temp1[0]), int(temp1[1])))
                                 temp = next(f)
                
-                        print("Obstacle")
                         temp = next(f)
                         while temp != 'end':
-                                print(temp)
                                 temp1 = temp.strip().split(' ')
                                 obstacles.append((int(temp1[0]), int(temp1[1])))
                                 temp = next(f)
-        print(obstacles)
-        print(box)
-
                 
 
 def draw(counter):
@@ -135,13 +127,6 @@ def draw(counter):
 
         plt.savefig('sokoban_' + str(counter) + '.png')
 
-# if boxes are moved to corners, they become obstacles
-def boxToObs ():
-        global box
-        for b in box:
-                if(b == (0, 0) or b == (0, len(environment[0])-1) or b == (len(environment)-1, 0) or b == (len(environment), len(environment[0])-1)):
-                        box.remove(b)
-                        obstacles.append(b)
 
 pos_action = {}
 
@@ -203,17 +188,24 @@ def nextPositon(current, result):
         global box
         newBox = []
         newPos = current
+
+        obs = False
+
         if result.get("Right"):
                 print("Action: Right")
 
                 for b in box:
 
                         for o in obstacles:
-                                if not(b[0] == o[0] == newPos[0] and newPos[1] < o[1] < b[1]):
+                                obs = b[0] == o[0] == newPos[0] and newPos[1] < o[1] < b[1]
+                                if obs:
+                                        break
 
-                                        while newPos[0] == b[0] and newPos[1] < b[1] and blockedRight(b) == False and touchRight(b) == False:
-                                                # print("Move box right")
-                                                b = (b[0], b[1] + 1)
+                        if not obs:
+                                while newPos[0] == b[0] and newPos[1] < b[1] and blockedRight(b) == False and touchRight(b) == False:
+                                        # print("Move box right")
+                                        b = (b[0], b[1] + 1)
+                        
                         newBox.append(b)
                 box = newBox
 
@@ -227,9 +219,12 @@ def nextPositon(current, result):
 
                 for b in box:
                         for o in obstacles:
-                                if not(b[0] == o[0] == newPos[0] and newPos[1] > o[1] > b[1]):
-                                        while (newPos[0] == b[0] and newPos[1] > b[1] and blockedLeft(b) == False and touchLeft(b) == False):
-                                                b = (b[0], b[1] - 1)
+                                obs = b[0] == o[0] == newPos[0] and newPos[1] > o[1] > b[1]
+                                if obs:
+                                        break
+                        if not obs:
+                                while (newPos[0] == b[0] and newPos[1] > b[1] and blockedLeft(b) == False and touchLeft(b) == False):
+                                        b = (b[0], b[1] - 1)
                                 # print("Box: " + str(b))
                         newBox.append(b)
                 box = newBox
@@ -244,9 +239,13 @@ def nextPositon(current, result):
                 
                 for b in box:
                         for o in obstacles:
-                                if not(b[1] == o[1] == newPos[1] and newPos[0] < o[0] < b[0]):
-                                        while (newPos[1] == b[1] and newPos[0] < b[0] and blockedBottom(b) == False and touchBottom(b) == False):
-                                                b = (b[0] + 1, b[1])
+                                obs = b[1] == o[1] == newPos[1] and newPos[0] < o[0] and o[0] < b[0]
+                                if obs:
+                                        break
+                        if (not obs):                
+                                while (newPos[1] == b[1] and newPos[0] < b[0] and blockedBottom(b) == False and touchBottom(b) == False):
+                                        b = (b[0] + 1, b[1])
+                        
                         newBox.append(b)
                 box = newBox
 
@@ -261,9 +260,12 @@ def nextPositon(current, result):
                 # move the box in the direction of robot
                 for b in box:
                         for o in obstacles:
-                                if not(b[0] == o[0] == newPos[0] and newPos[1] > o[1] > b[1]):
-                                        while (newPos[1] == b[1] and newPos[0] > b[0] and blockedTop(b) == False and touchTop(b) == False):
-                                                b = (b[0]-1, b[1])
+                                obs = b[0] == o[0] == newPos[0] and newPos[1] > o[1] > b[1]
+                                if obs:
+                                        break
+                        if not obs:
+                                while (newPos[1] == b[1] and newPos[0] > b[0] and blockedTop(b) == False and touchTop(b) == False):
+                                        b = (b[0]-1, b[1])
                         newBox.append(b)
                 box = newBox
 
@@ -436,6 +438,7 @@ def solve(maxStages = 25):
                 }
 
         print(results)
+        print("Obstacles: "+ str(obstacles))
         print(box)
 
         if results["OnGoal"]:
@@ -461,9 +464,9 @@ def solve(maxStages = 25):
         #                 print("More than 1 action")
         #                 temp = pos_action[robot_position]
                         
-        #                 # # use the next available action
-        #                 # results[temp[0]] = False
-        #                 # temp.pop(0)
+        #                 # use the next available action
+        #                 results[temp[0]] = False
+        #                 temp.pop(0)
 
         # else:
         #         pos_action[robot_position] = actions
@@ -480,7 +483,6 @@ def solve(maxStages = 25):
                         index = random.randint(0, len(actions) - 1)
                         results[actions[index]] = True
   
-
 
         robot_position, op = nextPositon(robot_position, results)
 
@@ -548,6 +550,6 @@ if __name__ == "__main__":
 
 
 # draw()
-createEnvironment("scene1")
+createEnvironment("scene2")
 solve()
 
