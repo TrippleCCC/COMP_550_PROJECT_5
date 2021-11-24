@@ -31,13 +31,14 @@ import matplotlib
 #         [0, 0, 0, 0, 0, 0, 0, 0],
 #         [0, 0, 0, 0, 0, 0, 0, 0]]
 
-environment = [
-        [0, 0, 0, 0, 0, 0], 
-        [0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0]]
+# environment = [
+#         [0, 0, 0, 0, 0, 0], 
+#         [0, 0, 0, 0, 0, 0],
+#         [0, 0, 0, 0, 0, 0],
+#         [0, 0, 0, 0, 0, 0],
+#         [0, 0, 0, 0, 0, 0],
+#         [0, 0, 0, 0, 0, 0]]
+environment = []
 
 # robot_position = (3, 0)
 # robot_position = (0, 0)
@@ -46,8 +47,8 @@ robot_position = (0, 1)
 # goal = (2, 0)
 # goal = (1, 7)
 # goal = (3, 1)
-goal = (4, 3)
-
+# goal = (4, 3)
+goal = ()
 
 # obstacles = [(1, 0), (1, 1), (1, 2)]
 # obstacles = [(1,1), (1,2), (1, 0)]
@@ -58,15 +59,54 @@ goal = (4, 3)
 # obstacles = [(1, 0)]
 # box = [(1, 1), (0, 2)]
 
-obstacles = [(0, 0), (0, 3), (2, 2), (2, 5), (4, 1), (5, 2)]
-box = [(1, 1), (1, 4), (3, 4), (5, 4)]
+# obstacles = [(0, 0), (0, 3), (2, 2), (2, 5), (4, 1), (5, 2)]
+# box = [(1, 1), (1, 4), (3, 4), (5, 4)]
 
+obstacles = [ ]
+box = [ ]
 
+def createEnvironment(file):
+        global environment
+        global goal
+        global robot_position
+        f = open(file, "r")
+        for x in f:
+                temp = x.strip().split(' ')
+                print(temp[0])
+                if temp[0] == 'size':
+                        print("size")
+                        environment = np.ones((int(temp[1]), int(temp[2])))
+                if temp[0] == 'g':
+                        goal = (int(temp[1]), int(temp[2]))
+                if temp[0] == 'r':
+                        robot_position = (int(temp[1]), int(temp[2]))
+                if temp[0] == 'movable':
+                        print("Moveable")
+                        temp = next(f)
+                        while temp != 'obstacle\n':
+                                print(temp)
+                                temp1 = temp.strip().split(' ')
+                                box.append((int(temp1[0]), int(temp1[1])))
+                                temp = next(f)
+               
+                        print("Obstacle")
+                        temp = next(f)
+                        while temp != 'end':
+                                print(temp)
+                                temp1 = temp.strip().split(' ')
+                                obstacles.append((int(temp1[0]), int(temp1[1])))
+                                temp = next(f)
+        print(obstacles)
+        print(box)
 
-def draw():
-        N = 6
+                
+
+def draw(counter):
+
+        N1 = len(environment)
+        N2 = len(environment[0])
         # make an empty data set
-        data = np.ones((6, 6)) * np.nan
+        data = np.ones((N1, N2)) * np.nan
         # fill in some fake data
         for b in box:
                 data[b[0], b[1]] = 1
@@ -84,16 +124,17 @@ def draw():
         # set the 'bad' values (nan) to be white and transparent
         my_cmap.set_bad(color='w', alpha=0)
         # draw the grid
-        for x in range(N + 1):
-                ax.axhline(x, lw=2, color='k', zorder=5)
-                ax.axvline(x, lw=2, color='k', zorder=5)
+        for x in range(N1 + 1):
+                for y in range(N2 + 1):
+                        ax.axhline(x, lw=2, color='k', zorder=5)
+                        ax.axvline(y, lw=2, color='k', zorder=5)
         # draw the boxes
-        ax.imshow(data, interpolation='none', cmap=my_cmap, extent=[0, N, 0, N], zorder=0)
+        ax.imshow(data, interpolation='none', cmap=my_cmap, extent=[0, N2, 0, N1], zorder=0)
         # turn off the axis labels
         ax.axis('off')
 
-        plt.show()
-draw()
+        plt.savefig('sokoban_' + str(counter) + '.png')
+
 # if boxes are moved to corners, they become obstacles
 def boxToObs ():
         global box
@@ -444,7 +485,7 @@ def solve(maxStages = 25):
         robot_position, op = nextPositon(robot_position, results)
 
         print(robot_position)
-        draw()
+        draw(k)
 
         if op == "Up":
             last_move = And(Down == False, Up == False)
@@ -505,6 +546,8 @@ if __name__ == "__main__":
         # TODO: implement default environment
         print("Using default environment...")
 
-solve()
+
 # draw()
+createEnvironment("scene1")
+solve()
 
